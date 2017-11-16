@@ -12,7 +12,7 @@ public class FoodFactory implements FactoryIF {
 
 
 	@Override
-	public GameObject createProduct(String discrim, double x, double y) {
-		return new GameObject(30,30,gc);
+	public Food createProduct(String discrim, double x, double y) {
+		return new Food(x,y,gc);
 	}
 }
