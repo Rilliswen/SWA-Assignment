@@ -35,22 +35,30 @@ public class GameObject {
 			gc.drawImage(img, x, y, 30, 30);
 		}
 	}
-	
+
+	public Image getImg() {
+		return img;
+	}
+
 	public double getWidth(){
 		if (img!=null)
 			return img.getWidth();
 		return 30;
 	}
-	
+
 	public double getHeight(){
 		if (img!=null)
 			return img.getHeight();
 		return 30;
 	}
 
+	public void eat(){
+
+	}
+
 }
 
-interface Evolution { void update();};
+
 
 class Food{
 	protected Image img;
@@ -71,26 +79,37 @@ class Food{
 	}
 }
 
+interface Evolution { void update();};
+
 class FirstCell extends GameObject implements Evolution{
 
 	Evolution delegate; 
 	protected int age;
-	
+
 	public FirstCell(double x, double y, GraphicsContext gc) {
 		super(x, y, gc);
 		img = new Image(GameObject.class.getResource("res/cell.png").toExternalForm());
 		update();
 		delegate = this;
-	}	
-	
+	}
+
 	public void eat(){
 		age++;
-		if (age==20)
+		if (age==2){
 			delegate = new Invertebrate(x,y,gc);
-		if (age==30)
-			delegate = new Vertebrate(x,y,gc);
+			img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+		}
+		if (age==4){
+			delegate = new Vertebrate(x,y,gc);			
+			img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+		}
 		delegate.update();
 	}
+
+	public int getAge() {
+		return age;
+	}
+
 }
 
 class Vertebrate extends GameObject implements Evolution{
