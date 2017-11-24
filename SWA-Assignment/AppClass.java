@@ -9,8 +9,10 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -24,14 +26,14 @@ public class AppClass extends Application{
 	Canvas canvas;
 	GraphicsContext gc;
 	ArrayList<Food> food = new ArrayList<Food>();
-	
-	
-	
+
+
+
 	GameObject player;
-	
-	
-	
-	
+
+
+
+
 	Random rnd = new Random();
 	int count = 0;
 	FoodFactory f;
@@ -43,26 +45,21 @@ public class AppClass extends Application{
 			boolean intersectFlag=false;
 			gc.setFill(Color.BLACK);
 			gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-			
-			
-			
-			
-			System.out.println(player.getClass().toGenericString());
-			
-			
-			
-			
-			gc.drawImage(((FirstCell)player).img, player.getX(), player.getY(), 30, 30);
-			System.out.println("Image Location: " + player.getImg().impl_getUrl());
-			
-				
-			
-			
+
+			//TODO fix this bug with evolution
+
+
+			//player.delegate.update();
+			player.update();
+
+
 			if (count++ > 100) {
 				food.add(f.createProduct("", rnd.nextInt(800), rnd.nextInt(600)));
 				count =0;				
-			}			
-			Rectangle p = new Rectangle(player.getX(), player.getY(), 30, 30);
+			}	
+
+
+			Rectangle p = new Rectangle(player.x, player.y, 30, 30);
 			Iterator<Food> it = food.iterator();
 			while (it.hasNext()){
 				Food s = it.next();
@@ -71,6 +68,11 @@ public class AppClass extends Application{
 					intersectFlag = true;
 					it.remove();
 					player.eat();
+					if ( ((FirstCell)player).age == 2 ) {
+						createChoice("Become a vertebrate", "Become an invertebrate");	
+					}
+					else if ( ((FirstCell)player).age == 4 )
+						createChoice("Become a Cartilaginous fish", "I want bony skeleton");
 				}
 				s.update();
 			}
@@ -88,17 +90,18 @@ public class AppClass extends Application{
 		@Override
 		public void handle(KeyEvent event) {
 			if(event.getCode() == KeyCode.W){
-				player.setY(player.getY()-5);
+				player.y = player.y-5;
 			}
 			if(event.getCode() == KeyCode.S){
-				player.setY(player.getY()+5);
+				player.y = player.y+5;
 			}
 			if(event.getCode() == KeyCode.A){
-				player.setX(player.getX()-5);
+				player.x = player.x-5;
 			}
 			if(event.getCode() == KeyCode.D){
-				player.setX(player.getX()+5);
+				player.x = player.x+5;
 			}
+
 		}		
 	};
 
@@ -119,26 +122,46 @@ public class AppClass extends Application{
 		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		root.getChildren().add(canvas);
 
-		
-		
-		
+
+
+
 		player = new FirstCell(30, 30, gc);
-		
-		
-		
+
+
+
 		f = new FoodFactory(gc);
 
 		scene.setOnKeyPressed(keyhandler);
 		timer.start();
 	}
-	
-	public Popup createPopup(){
-		final Popup popup = new Popup();
-		popup.setAutoHide(true);
-		popup.setX(300);
-		popup.setY(200);
-		popup.getContent().addAll(new Button());
-		return popup;
+
+	public void createChoice(String opt1, String opt2){
+		Button choice1 = new Button();
+		Button choice2 = new Button();
+		choice1.setText(opt1);
+		choice2.setText(opt2);
+		choice1.setLayoutX(100);
+		choice2.setLayoutX(200);
+		choice1.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>(){
+			@Override
+			public void handle(MouseEvent event) {
+				((FirstCell)player).evolve(choice1.getText());
+				System.out.println(choice1.getText());
+				root.getChildren().remove(choice1);
+				root.getChildren().remove(choice2);
+			}});
+		choice2.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>(){
+			@Override
+			public void handle(MouseEvent event) {
+				((FirstCell)player).evolve(choice2.getText());
+				System.out.println(choice2.getText());
+				root.getChildren().remove(choice1);
+				root.getChildren().remove(choice2);
+			}});
+
+		root.getChildren().add(choice1);
+		root.getChildren().add(choice2);
+
 	}
 
 }
