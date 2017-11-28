@@ -67,7 +67,7 @@ public class AppClass extends Application{
 				if (p.intersects(fishrect.getX(), fishrect.getY(), 30, 30)){
 					intersectFlag = true;
 					it.remove();
-					player.eat();
+					((FirstCell)player).eat();
 					if ( ((FirstCell)player).age == 2 ) {
 						createChoice("Become a vertebrate", "Become an invertebrate");	
 					}
@@ -80,8 +80,12 @@ public class AppClass extends Application{
 				gc.setFill(Color.RED);
 				gc.fillText("MUNCH!", 400, 500);
 			}
+			
+			//** Diagnostics code **/
 			gc.setFill(Color.RED);
-			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 600);
+			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
+			gc.fillText("Player class: " +  player.getClass().toGenericString(), 100, 500);
+			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
 		}
 	};
 
@@ -90,18 +94,17 @@ public class AppClass extends Application{
 		@Override
 		public void handle(KeyEvent event) {
 			if(event.getCode() == KeyCode.W){
-				player.y = player.y-5;
+				player.y = player.y-30;
 			}
 			if(event.getCode() == KeyCode.S){
-				player.y = player.y+5;
+				player.y = player.y+30;
 			}
 			if(event.getCode() == KeyCode.A){
-				player.x = player.x-5;
+				player.x = player.x-30;
 			}
 			if(event.getCode() == KeyCode.D){
-				player.x = player.x+5;
+				player.x = player.x+30;
 			}
-
 		}		
 	};
 
@@ -125,7 +128,7 @@ public class AppClass extends Application{
 
 
 
-		player = new FirstCell(30, 30, gc);
+		player = new FirstCell(gc, 30, 30);
 
 
 
@@ -146,7 +149,12 @@ public class AppClass extends Application{
 			@Override
 			public void handle(MouseEvent event) {
 				((FirstCell)player).evolve(choice1.getText());
-				System.out.println(choice1.getText());
+				player.update();
+				
+					
+				System.out.println("AppClass: " + player.img.impl_getUrl());
+				
+				
 				root.getChildren().remove(choice1);
 				root.getChildren().remove(choice2);
 			}});
@@ -154,7 +162,12 @@ public class AppClass extends Application{
 			@Override
 			public void handle(MouseEvent event) {
 				((FirstCell)player).evolve(choice2.getText());
-				System.out.println(choice2.getText());
+				player.update();
+				
+				
+				System.out.println("AppClass: " + player.img.impl_getUrl());
+
+				
 				root.getChildren().remove(choice1);
 				root.getChildren().remove(choice2);
 			}});
@@ -165,3 +178,5 @@ public class AppClass extends Application{
 	}
 
 }
+
+

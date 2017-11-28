@@ -1,30 +1,30 @@
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 
 public class GameObject {
 
-	protected Image img;
+	public Image img;
 	protected double x, y;
 	protected GraphicsContext gc;
 
-	public GameObject(double x, double y, GraphicsContext gc) {
-		super();
-		this.x = x;
-		this.y = y;
-		this.gc = gc;
+	public GameObject(GraphicsContext gc, double x, double y)
+	{
+		this.gc=gc;
+		this.x=x;
+		this.y=y;
 	}
-
+	
 
 	public void update() {
 		if (img!=null){
 			gc.drawImage(img, x, y, 30, 30);
 		}
 	}
-
-	public void eat(){
-
-	}
 }
+
+
+//*** FOOD CLASS ***//
 
 class Food{
 	protected Image img;
@@ -45,39 +45,44 @@ class Food{
 	}
 }
 
-interface Evolution { void update();};
+
+//*** DELEGATION PATTERN ***//
+
+
+interface Evolution {public void update(); };
 
 class FirstCell extends GameObject implements Evolution{
 
-	public Evolution delegate;
-	protected int age;
+	Evolution delegate;
+	protected int age=0;
 
-	public FirstCell(double x, double y, GraphicsContext gc) {
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/cell.png").toExternalForm());
-		update();
+	public FirstCell(GraphicsContext gc, double x, double y) {
+		super(gc, x, y);
+		img = new Image(GameObject.class.getResource("res/fish.png").toExternalForm());	
 		delegate = this;
+		delegate.update();
 	}
 
+	
 	public void eat(){
 		age++;
-
 	}
 
 	public void evolve(String type){
 		switch (type) {
-		case "Become a vertebrate" :	delegate = new Vertebrate(x,y,gc);
-		img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
-		break;
-		case "Become an invertebrate": 	delegate = new Invertebrate(x,y,gc);
-		img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-		break;
+		
+		case "Become a vertebrate" :	delegate = new Vertebrate(gc,x,y);	
+				//img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+				break;
+		case "Become an invertebrate": 	delegate = new Invertebrate(gc,x,y);
+				//img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+				break;
 
 
 		case "I want a bony skeleton":	break;
 		case "Become a "
-		+ "Cartilaginous fish":			delegate = new Invertebrate(x,y,gc);
-										img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
+		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,x,y);
+				//img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
 										break;
 		case "Become an Arthropod" : 	break;
 		case "Become a Cnidarian" : 	break;
@@ -108,8 +113,16 @@ class FirstCell extends GameObject implements Evolution{
 
 		case "Become a bird":			break;
 		case "Become a snake":			break;
-		default : 						System.out.print("Ya fked up");
+		default: 						System.out.print("Ya fked up");
+			
 		}
+		
+		delegate.update();
+		System.out.println(delegate.getClass().toGenericString());
+		
+		//img remains the cell image even though constructor is supposed to change it.
+		System.out.println("IMG: " + this.img.impl_getUrl());
+		
 	}
 	public int getAge() {
 		return age;
@@ -118,138 +131,151 @@ class FirstCell extends GameObject implements Evolution{
 
 class Vertebrate extends GameObject implements Evolution{
 
-	public Vertebrate(double x, double y, GraphicsContext gc) {
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+	Image img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+	
+	public Vertebrate(GraphicsContext gc, double x, double y) {
+		super(gc, x, y);
+		super.img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
 		update();
 	}
+	
 }
 
 class Invertebrate extends GameObject implements Evolution{
 
-	public Invertebrate(double x, double y, GraphicsContext gc) {
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-		System.out.println("hi im an invertebrate");
+	public Invertebrate(GraphicsContext gc, double x, double y) {
+		super(gc, x, y);
+		super.img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+		
+		gc.setFill(Color.RED);
+		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
+		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
+		System.out.println("Constructor exit");
+		
+		update();
 	}
+
 }
 
 class Cnidarian extends GameObject implements Evolution{
 
-	public Cnidarian(double x, double y, GraphicsContext gc) {
+	public Cnidarian(GraphicsContext gc, double x, double y) {
 
-		super(x, y, gc);
+		super(gc, x, y);
 		img = new Image(GameObject.class.getResource("res/jellyfish.png").toExternalForm());
 		update();
 	}
+
 }
 
 class CartilaginousFish extends GameObject implements Evolution{
 
-	public CartilaginousFish(double x, double y, GraphicsContext gc) {
+	public CartilaginousFish(GraphicsContext gc, double x, double y) {
 
-		super(x, y, gc);
+		super(gc, x, y);
 		img = new Image(GameObject.class.getResource("res/Shark.png").toExternalForm());
 		update();
 	}
+
 }
-
-class RayfinnedFish extends GameObject implements Evolution{
-
-	public RayfinnedFish(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/fish.png").toExternalForm());
-		update();
-	}
-}
-
-class Amphibian extends GameObject implements Evolution{
-
-	public Amphibian(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/Frog.png").toExternalForm());
-		update();
-	}
-}
-
-class Insect extends GameObject implements Evolution{
-
-	public Insect(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/ladybug.png").toExternalForm());
-		update();
-	}
-}
-
-class Shrimp extends GameObject implements Evolution{
-
-	public Shrimp(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/shrimp.png").toExternalForm());
-		update();
-	}
-}
-
-class SeaSpider extends GameObject implements Evolution{
-
-	public SeaSpider(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/Sea_Spider.png").toExternalForm());
-		update();
-	}
-}
-
-class Mammal extends GameObject implements Evolution{
-
-	public Mammal(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/black_cat.png").toExternalForm());
-		update();
-	}
-}
-
-class Spider extends GameObject implements Evolution{
-
-	public Spider(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/spider.png").toExternalForm());
-		update();
-	}
-}
-
-class Scorpion extends GameObject implements Evolution{
-
-	public Scorpion(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/Scorpion.png").toExternalForm());
-		update();
-	}
-}
-
-class Bird extends GameObject implements Evolution{
-
-	public Bird(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/bird.png").toExternalForm());
-		update();
-	}
-}
-
-class Snake extends GameObject implements Evolution{
-
-	public Snake(double x, double y, GraphicsContext gc) {
-
-		super(x, y, gc);
-		img = new Image(GameObject.class.getResource("res/snake.png").toExternalForm());
-		update();
-	}
-}
+//
+//class RayfinnedFish extends GameObject implements Evolution{
+//
+//	public RayfinnedFish(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/fish.png").toExternalForm());
+//		update();
+//	}
+//	
+//}
+//
+//class Amphibian extends GameObject implements Evolution{
+//
+//	public Amphibian(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/Frog.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Insect extends GameObject implements Evolution{
+//
+//	public Insect(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/ladybug.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Shrimp extends GameObject implements Evolution{
+//
+//	public Shrimp(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/shrimp.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class SeaSpider extends GameObject implements Evolution{
+//
+//	public SeaSpider(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/Sea_Spider.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Mammal extends GameObject implements Evolution{
+//
+//	public Mammal(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/black_cat.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Spider extends GameObject implements Evolution{
+//
+//	public Spider(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/spider.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Scorpion extends GameObject implements Evolution{
+//
+//	public Scorpion(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/Scorpion.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Bird extends GameObject implements Evolution{
+//
+//	public Bird(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/bird.png").toExternalForm());
+//		update();
+//	}
+//}
+//
+//class Snake extends GameObject implements Evolution{
+//
+//	public Snake(double x, double y, GraphicsContext gc) {
+//
+//		super(gc, x, y);
+//		img = new Image(GameObject.class.getResource("res/snake.png").toExternalForm());
+//		update();
+//	}
+//}
