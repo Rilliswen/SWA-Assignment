@@ -26,25 +26,39 @@ public class GameObject {
 
 //*** FOOD CLASS ***//
 
-class Food{
-	protected Image img;
-	protected double x, y;
-	protected GraphicsContext gc;
+class Food extends GameObject{
 
-	public Food(double x, double y, GraphicsContext gc) {
-		this.x = x;
-		this.y = y;
-		this.gc = gc;
-		img = new Image("res/seed.png");
+	public Food(GraphicsContext gc, double x, double y) {
+		super(gc, x, y);
+		img = new Image(GameObject.class.getResource("res/seed.png").toExternalForm());
 		update();
-	}
-	public void update() {
-		if (img!=null){
-			gc.drawImage(img, x, y, 30, 30);
-		}
 	}
 }
 
+//*** ENEMY CLASS ***//
+
+class Enemy extends GameObject{
+	double dx=1, dy=1;
+	public Enemy(GraphicsContext gc, double x, double y) {
+		super(gc, x, y);
+		img = new Image(GameObject.class.getResource("res/Meteor.png").toExternalForm());
+		update();
+	}
+	public void update() {
+		x+=dx;
+		if(x>800)
+			dx=-1;
+		if(x<0)
+			dx=1;
+		y+=dy;
+		if(y>600)
+			dy=-1;
+		if(y<0)
+			dy=1;
+		super.update();
+	}
+
+}
 
 //*** DELEGATION PATTERN ***//
 
@@ -58,9 +72,9 @@ class FirstCell extends GameObject implements Evolution{
 
 	public FirstCell(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
-		img = new Image(GameObject.class.getResource("res/fish.png").toExternalForm());	
+		img = new Image(GameObject.class.getResource("res/cell.png").toExternalForm());	
 		delegate = this;		
-		delegate.update();
+		update();
 	}
 
 
@@ -72,20 +86,23 @@ class FirstCell extends GameObject implements Evolution{
 		switch (type) {
 
 		case "Become a vertebrate" :	delegate = new Vertebrate(gc,x,y);	
-		//img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
-		break;
+				img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+				break;
 		case "Become an invertebrate": 	delegate = new Invertebrate(gc,x,y);
-		//img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-		break;
+				img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+				break;
 
 
 		case "I want a bony skeleton":	break;
 		case "Become a "
 		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,x,y);
-		//img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
-		break;
-		case "Become an Arthropod" : 	break;
-		case "Become a Cnidarian" : 	break;
+				img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
+				break;
+		case "Become an Arthropod" : 	
+				break;
+		case "Become a Cnidarian" : 	delegate = new Cnidarian(gc,x,y);
+				img = new Image(GameObject.class.getResource("res/jellyfish.png").toExternalForm());
+				break;
 
 
 		case "Become a "
@@ -178,6 +195,7 @@ class CartilaginousFish extends GameObject implements Evolution{
 	}
 
 }
+
 //
 //class RayfinnedFish extends GameObject implements Evolution{
 //

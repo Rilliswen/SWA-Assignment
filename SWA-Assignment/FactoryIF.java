@@ -1,5 +1,5 @@
 
 public interface FactoryIF {
 
-	Food createProduct(String discrim, double x, double y);
+	GameObject createProduct(String discrim, double x, double y);
 }
