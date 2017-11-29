@@ -14,13 +14,13 @@ public class GameObject {
 		this.x=x;
 		this.y=y;
 	}
-	
+
 
 	public void update() {
 		if (img!=null){
 			gc.drawImage(img, x, y, 30, 30);
 		}
-	}
+	}	
 }
 
 
@@ -59,31 +59,31 @@ class FirstCell extends GameObject implements Evolution{
 	public FirstCell(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
 		img = new Image(GameObject.class.getResource("res/fish.png").toExternalForm());	
-		delegate = this;
+		delegate = this;		
 		delegate.update();
 	}
 
-	
+
 	public void eat(){
 		age++;
 	}
 
 	public void evolve(String type){
 		switch (type) {
-		
+
 		case "Become a vertebrate" :	delegate = new Vertebrate(gc,x,y);	
-				//img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
-				break;
+		//img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+		break;
 		case "Become an invertebrate": 	delegate = new Invertebrate(gc,x,y);
-				//img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-				break;
+		//img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+		break;
 
 
 		case "I want a bony skeleton":	break;
 		case "Become a "
 		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,x,y);
-				//img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
-										break;
+		//img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
+		break;
 		case "Become an Arthropod" : 	break;
 		case "Become a Cnidarian" : 	break;
 
@@ -114,44 +114,44 @@ class FirstCell extends GameObject implements Evolution{
 		case "Become a bird":			break;
 		case "Become a snake":			break;
 		default: 						System.out.print("Ya fked up");
-			
+
 		}
-		
+
 		delegate.update();
-		System.out.println(delegate.getClass().toGenericString());
-		
-		//img remains the cell image even though constructor is supposed to change it.
-		System.out.println("IMG: " + this.img.impl_getUrl());
-		
+
+		//***    DIAGNOSTICS    ***//
+		System.out.println(delegate.getClass().toGenericString());				
+		System.out.println("Evolve IMG: " + this.img.impl_getUrl()); //img remains the cell image even though constructor is supposed to change it.
+
 	}
 	public int getAge() {
 		return age;
 	}
+	
 }
 
 class Vertebrate extends GameObject implements Evolution{
 
-	Image img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
-	
 	public Vertebrate(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
-		super.img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+		img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
 		update();
 	}
-	
+
 }
 
 class Invertebrate extends GameObject implements Evolution{
 
 	public Invertebrate(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
-		super.img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-		
+		img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+
+		//**    DIAGNOSTICS    **//
 		gc.setFill(Color.RED);
 		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
 		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
-		System.out.println("Constructor exit");
-		
+		System.out.println("Constructor exit");		
+
 		update();
 	}
 

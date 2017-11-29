@@ -16,7 +16,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.stage.Popup;
 import javafx.stage.Stage;
 
 public class AppClass extends Application{
@@ -42,23 +41,57 @@ public class AppClass extends Application{
 
 		@Override
 		public void handle(long now) {
-			boolean intersectFlag=false;
+//			boolean intersectFlag=false;
 			gc.setFill(Color.BLACK);
-			gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-
-			//TODO fix this bug with evolution
+			//gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
 
-			//player.delegate.update();
-			player.update();
+			((FirstCell)player).delegate.update();
 
+			//Draws both Images	& stops player from moving	
 
+			//** Factory for food **/
 			if (count++ > 100) {
 				food.add(f.createProduct("", rnd.nextInt(800), rnd.nextInt(600)));
 				count =0;				
 			}	
 
+			//** Collision detection **/
+			//** Redraw food **//
+			for (Food s: food)
+				s.update();		
+			//** Diagnostics code **/
+			gc.setFill(Color.RED);
+			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
+			gc.fillText("Player class: " +  player.getClass().toGenericString(), 100, 500);
+			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
+		}
+	};
 
+	EventHandler<KeyEvent> keyhandler = new EventHandler<KeyEvent> () {
+
+		@Override
+		public void handle(KeyEvent event) {
+			if(event.getCode() == KeyCode.W){
+				player.y = player.y-30;			
+			}
+			if(event.getCode() == KeyCode.S){
+				player.y = player.y+30;
+			}
+			if(event.getCode() == KeyCode.A){
+				player.x = player.x-30;
+			}
+			if(event.getCode() == KeyCode.D){
+				player.x = player.x+30;
+			}
+			((FirstCell)player).delegate.update();
+			//System.out.println("IMG WHILE MOVING :" + player.img.impl_getUrl());
+			
+			//***     MONITOR MOVEMENT     ***//
+			gc.setFill(Color.YELLOW);
+			gc.fillRect(player.x, player.y, 15, 15);
+			
+			boolean intersectFlag=false;
 			Rectangle p = new Rectangle(player.x, player.y, 30, 30);
 			Iterator<Food> it = food.iterator();
 			while (it.hasNext()){
@@ -74,36 +107,10 @@ public class AppClass extends Application{
 					else if ( ((FirstCell)player).age == 4 )
 						createChoice("Become a Cartilaginous fish", "I want bony skeleton");
 				}
-				s.update();
 			}
 			if(intersectFlag){
 				gc.setFill(Color.RED);
 				gc.fillText("MUNCH!", 400, 500);
-			}
-			
-			//** Diagnostics code **/
-			gc.setFill(Color.RED);
-			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
-			gc.fillText("Player class: " +  player.getClass().toGenericString(), 100, 500);
-			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
-		}
-	};
-
-	EventHandler<KeyEvent> keyhandler = new EventHandler<KeyEvent> () {
-
-		@Override
-		public void handle(KeyEvent event) {
-			if(event.getCode() == KeyCode.W){
-				player.y = player.y-30;
-			}
-			if(event.getCode() == KeyCode.S){
-				player.y = player.y+30;
-			}
-			if(event.getCode() == KeyCode.A){
-				player.x = player.x-30;
-			}
-			if(event.getCode() == KeyCode.D){
-				player.x = player.x+30;
 			}
 		}		
 	};
