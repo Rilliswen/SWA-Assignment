@@ -11,6 +11,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -24,6 +25,7 @@ public class AppClass extends Application{
 	Pane root;
 	Scene scene;
 	Canvas canvas;
+	Canvas background;
 	GraphicsContext gc;
 	ArrayList<GameObject> food = new ArrayList<GameObject>();
 	ArrayList<GameObject> enemies = new ArrayList<GameObject>();
@@ -34,7 +36,7 @@ public class AppClass extends Application{
 
 	Random rnd = new Random();
 	int foodCounter = 0, enemyCounter = 0;
-	
+
 	FoodFactory f;
 
 	public static void main(String[] args) {
@@ -50,18 +52,20 @@ public class AppClass extends Application{
 			gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
 			//player.update();
-			
 			((FirstCell)player).afterMove();
-			
+
+
+			root.getChildren().add(player.hbar());
+
 			enemyCollisionCheck();		
-					
+
 
 			// Factory for food & enemies
 			if (foodCounter++ > 100) {
 				food.add(f.createProduct("food", rnd.nextInt(800), rnd.nextInt(600)));
 				foodCounter =0;				
 			}	
-			
+
 			if (enemyCounter++ > 200 && enemies.size() < 6) {
 				enemies.add(f.createProduct("enemy", rnd.nextInt(800), rnd.nextInt(600)));
 				enemyCounter = 0;
@@ -70,15 +74,15 @@ public class AppClass extends Application{
 			// Redraw food & enemies
 			for (GameObject s: food)
 				s.update();	
-			
+
 			for (GameObject e: enemies)
 				e.update();
-			
-			
+
+
 			//*** XXX   DIAGNOSTICS    ***//
-//			gc.setFill(Color.RED);
+						gc.setFill(Color.RED);
 			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
-//			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
+						gc.fillText("Player Health: " + player.curHP(), 400, 20);
 		}
 	};
 
@@ -87,8 +91,7 @@ public class AppClass extends Application{
 		@Override
 		public void handle(KeyEvent event) {
 			if(event.getCode() == KeyCode.W){
-				//player.y = player.y-30;	
-				
+				//player.y = player.y-30;					
 				((FirstCell)player).up();
 			}
 			if(event.getCode() == KeyCode.S){
@@ -105,13 +108,13 @@ public class AppClass extends Application{
 			}
 			//player.update();
 			//((FirstCell)player).afterMove();
-			
-			
+
+
 			//System.out.println("IMG WHILE MOVING :" + player.img.impl_getUrl());
-			
+
 			//*** XXX    MONITOR MOVEMENT     ***//
-//			gc.setFill(Color.YELLOW);
-//			gc.fillRect(((FirstCell)player).getX(), ((FirstCell)player).getY(), 15, 15);							
+			//			gc.setFill(Color.YELLOW);
+			//			gc.fillRect(((FirstCell)player).getX(), ((FirstCell)player).getY(), 15, 15);							
 			foodCollisionCheck();
 		}		
 	};
@@ -119,26 +122,28 @@ public class AppClass extends Application{
 	@Override
 	public void start(Stage stage) throws Exception {
 		root = new Pane();
-		scene  = new Scene(root, 800,600);
+		scene  = new Scene(root, 800,800);
 		stage.setScene(scene);
 		stage.show();
 
 		canvas = new Canvas(800,600);
+		canvas.setLayoutY(100);		
 		gc = canvas.getGraphicsContext2D();
+		background = new Canvas(800, 800);
 		gc.setFill(Color.BLACK);
 		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-		root.getChildren().add(canvas);
+		root.getChildren().addAll(canvas, background);
 
 
 
 		startGameMenu();
-		
+
 
 
 
 		f = new FoodFactory(gc);		
 	}
-	
+
 	public void startGameMenu(){
 		Button start = new Button();
 		Button exit = new Button();
@@ -152,17 +157,13 @@ public class AppClass extends Application{
 			@Override
 			public void handle(MouseEvent arg0) {
 				player = new FirstCell(gc, 30, 30);
-				ProgressBar hbar = new ProgressBar(0.6);
+				root.getChildren().add(player.hbar());
+
 				//TODO Add stylesheet here!
-				//scene.getStylesheets().add();
-				hbar.setLayoutX(player.getX()-15);
-				hbar.setLayoutY(player.getY()+30);
-				hbar.setMaxSize(50, 5);
-				hbar.setMaxHeight(10);
-				root.getChildren().add(hbar);
+				//scene.getStylesheets().add();				
 				scene.setOnKeyPressed(keyhandler);
 				timer.start();
-				
+
 				root.getChildren().remove(start);
 				root.getChildren().remove(exit);
 			}			
@@ -175,17 +176,22 @@ public class AppClass extends Application{
 		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
 		for (GameObject e: enemies) {
 			Rectangle enemy = new Rectangle(e.x, e.y, e.img.getWidth(), e.img.getHeight());
-			if (p.intersects(enemy.getX(),enemy.getY(), 30, 30)) {					
-				scene.setOnKeyPressed(null);	
+			if (p.intersects(enemy.getX(),enemy.getY(), 30, 30)) {
+				if(player.curHP() == 0){
+					scene.setOnKeyPressed(null);	
 
-				gc.setFill(Color.RED);					
-				gc.fillText("YOU DIED!!", 300, 400);
-				timer.stop();
-				restartGame();
+					gc.setFill(Color.RED);					
+					gc.fillText("YOU DIED!!", 300, 400);
+					timer.stop();
+					restartGame();
+				}
+				//XXX Player loses health too fast
+				else
+					player.decrementHP();
 			}
 		}
 	}
-	
+
 	public void foodCollisionCheck() {
 		boolean intersectFlag=false;
 		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
@@ -211,7 +217,7 @@ public class AppClass extends Application{
 			gc.fillText("MUNCH!", 400, 500);
 		}
 	}
-	
+
 	public void createChoice(String opt1, String opt2){
 		Button choice1 = new Button();
 		Button choice2 = new Button();
@@ -224,11 +230,11 @@ public class AppClass extends Application{
 			public void handle(MouseEvent event) {
 				((FirstCell)player).evolve(choice1.getText());
 				player.update();
-				
-					
+
+
 				System.out.println("AppClass: " + player.img.impl_getUrl());
-				
-				
+
+
 				root.getChildren().remove(choice1);
 				root.getChildren().remove(choice2);
 			}});
@@ -237,11 +243,11 @@ public class AppClass extends Application{
 			public void handle(MouseEvent event) {
 				((FirstCell)player).evolve(choice2.getText());
 				player.update();
-				
-				
+
+
 				System.out.println("AppClass: " + player.img.impl_getUrl());
 
-				
+
 				root.getChildren().remove(choice1);
 				root.getChildren().remove(choice2);
 			}});
@@ -250,9 +256,9 @@ public class AppClass extends Application{
 		root.getChildren().add(choice2);
 
 	}
-	
+
 	int restartTimer =0;
-	
+
 	AnimationTimer restart = new AnimationTimer(){
 		@Override
 		public void handle(long now) {
@@ -271,9 +277,9 @@ public class AppClass extends Application{
 				player = new FirstCell(gc, 30, 30);
 			}
 		}};
-	public void restartGame(){
+		public void restartGame(){
 			restart.start();			
-	}
+		}
 
 }
 
