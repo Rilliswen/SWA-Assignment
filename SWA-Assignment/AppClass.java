@@ -10,6 +10,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -151,6 +152,14 @@ public class AppClass extends Application{
 			@Override
 			public void handle(MouseEvent arg0) {
 				player = new FirstCell(gc, 30, 30);
+				ProgressBar hbar = new ProgressBar(0.6);
+				//TODO Add stylesheet here!
+				//scene.getStylesheets().add();
+				hbar.setLayoutX(player.getX()-15);
+				hbar.setLayoutY(player.getY()+30);
+				hbar.setMaxSize(50, 5);
+				hbar.setMaxHeight(10);
+				root.getChildren().add(hbar);
 				scene.setOnKeyPressed(keyhandler);
 				timer.start();
 				

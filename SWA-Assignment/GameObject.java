@@ -7,6 +7,7 @@ public class GameObject {
 	public Image img;
 	protected double x, y;
 	protected GraphicsContext gc;
+	int hp;
 
 	public GameObject(GraphicsContext gc, double x, double y)
 	{
@@ -21,7 +22,7 @@ public class GameObject {
 			gc.drawImage(img, x, y, 30, 30);
 		}
 	}	
-	
+
 	public double getX() {
 		return x;
 	}
@@ -47,7 +48,28 @@ public class GameObject {
 }
 
 
-//*** FOOD CLASS ***//
+
+
+class NullObj extends GameObject{
+	private static NullObj instance = null;
+
+	private NullObj() {
+		super(null, -1, -1);
+	}
+
+	public static NullObj getInstance(){
+		if (instance == null)
+			instance = new NullObj();
+		return instance;
+	}
+
+	public void update(){}	
+	public void up(){}
+	public void down(){}
+	public void left(){}
+	public void right(){}	
+}
+
 
 class Food extends GameObject{
 
@@ -80,7 +102,6 @@ class Enemy extends GameObject{
 			dy=1;
 		super.update();
 	}
-
 }
 
 //*** DELEGATION PATTERN ***//
@@ -93,7 +114,7 @@ interface Evolution {
 	void left(); 
 	void right();
 	double getX();
-	double getY();};
+	double getY();}
 
 class FirstCell extends GameObject implements Evolution{
 
@@ -102,6 +123,7 @@ class FirstCell extends GameObject implements Evolution{
 
 	public FirstCell(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
+		hp = 2;
 		img = new Image(GameObject.class.getResource("res/cell.png").toExternalForm());	
 		delegate = this;		
 		update();
@@ -116,19 +138,19 @@ class FirstCell extends GameObject implements Evolution{
 		switch (type) {
 
 		case "Become a vertebrate" :	delegate = new Vertebrate(gc,getX(),getY());	
-				break;
+		break;
 		case "Become an invertebrate": 	delegate = new Invertebrate(gc,getX(),getY());
-				break;
+		break;
 
 
 		case "I want a bony skeleton":	break;
 		case "Become a "
 		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,getX(),getY());
-				break;
+		break;
 		case "Become an Arthropod" : 	
-				break;
+			break;
 		case "Become a Cnidarian" : 	delegate = new Cnidarian(gc,getX(),getY());
-				break;
+		break;
 
 
 		case "Become a "
@@ -170,12 +192,12 @@ class FirstCell extends GameObject implements Evolution{
 	public int getAge() {
 		return age;
 	}
-	
+
 	public void afterMove()
 	{
 		delegate.update();
 	}
-	
+
 	public void up()
 	{
 		if(delegate instanceof FirstCell)
@@ -199,12 +221,12 @@ class FirstCell extends GameObject implements Evolution{
 	}
 	public void right()
 	{
-			if(delegate instanceof FirstCell)
-				super.right();
-			else
-				delegate.right();
+		if(delegate instanceof FirstCell)
+			super.right();
+		else
+			delegate.right();
 	}
-	
+
 	public double getX(){
 		if(delegate instanceof FirstCell)
 			return super.getX();
@@ -217,32 +239,31 @@ class FirstCell extends GameObject implements Evolution{
 		else
 			return delegate.getY();
 	}
-
 }
 
 class Vertebrate extends GameObject implements Evolution{
 
 	public Vertebrate(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
+		hp =3;
 		img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
 		update();
 	}
-
 }
 
 class Invertebrate extends GameObject implements Evolution{
 
 	public Invertebrate(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
+		hp =3;
 		img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
 		update();
 		//**    DIAGNOSTICS    **//
-//		gc.setFill(Color.RED);
-//		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
-//		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
-//		System.out.println("Constructor exit");				
+		//		gc.setFill(Color.RED);
+		//		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
+		//		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
+		//		System.out.println("Constructor exit");				
 	}
-
 }
 
 class Cnidarian extends GameObject implements Evolution{
@@ -250,10 +271,10 @@ class Cnidarian extends GameObject implements Evolution{
 	public Cnidarian(GraphicsContext gc, double x, double y) {
 
 		super(gc, x, y);
+		hp = 4;
 		img = new Image(GameObject.class.getResource("res/jellyfish.png").toExternalForm());
 		update();
 	}
-
 }
 
 class CartilaginousFish extends GameObject implements Evolution{
@@ -261,10 +282,10 @@ class CartilaginousFish extends GameObject implements Evolution{
 	public CartilaginousFish(GraphicsContext gc, double x, double y) {
 
 		super(gc, x, y);
+		hp = 4;
 		img = new Image(GameObject.class.getResource("res/Shark.png").toExternalForm());
 		update();
 	}
-
 }
 
 //
