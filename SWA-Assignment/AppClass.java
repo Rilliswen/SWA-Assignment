@@ -31,28 +31,31 @@ public class AppClass extends Application{
 	GameObject player;
 
 
-
-
 	Random rnd = new Random();
 	int foodCounter = 0, enemyCounter = 0;
 	
 	FoodFactory f;
 
+	public static void main(String[] args) {
+		launch(args);
+	}
+
+
 	AnimationTimer timer = new AnimationTimer() {
 
 		@Override
 		public void handle(long now) {
-//			boolean intersectFlag=false;
 			gc.setFill(Color.BLACK);
 			gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
+			//player.update();
+			
+			((FirstCell)player).afterMove();
+			
+			enemyCollisionCheck();		
+					
 
-			player.update();
-			enemyCollisionCheck();
-
-			//Draws both Images	& stops player from moving	
-
-			//** Factory for food **/
+			// Factory for food & enemies
 			if (foodCounter++ > 100) {
 				food.add(f.createProduct("food", rnd.nextInt(800), rnd.nextInt(600)));
 				foodCounter =0;				
@@ -62,19 +65,19 @@ public class AppClass extends Application{
 				enemies.add(f.createProduct("enemy", rnd.nextInt(800), rnd.nextInt(600)));
 				enemyCounter = 0;
 			}
-			//** Collision detection **/
-			//** Redraw food **//
+
+			// Redraw food & enemies
 			for (GameObject s: food)
 				s.update();	
 			
 			for (GameObject e: enemies)
 				e.update();
 			
-			//** Diagnostics code **/
-			gc.setFill(Color.RED);
+			
+			//*** XXX   DIAGNOSTICS    ***//
+//			gc.setFill(Color.RED);
 			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
-			gc.fillText("Player class: " +  player.getClass().toGenericString(), 100, 500);
-			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
+//			gc.fillText("Player Image: " + player.img.impl_getUrl(), 100, 450);
 		}
 	};
 
@@ -83,31 +86,34 @@ public class AppClass extends Application{
 		@Override
 		public void handle(KeyEvent event) {
 			if(event.getCode() == KeyCode.W){
-				player.y = player.y-30;			
+				//player.y = player.y-30;	
+				
+				((FirstCell)player).up();
 			}
 			if(event.getCode() == KeyCode.S){
-				player.y = player.y+30;
+				//player.y = player.y+30;
+				((FirstCell)player).down();
 			}
 			if(event.getCode() == KeyCode.A){
-				player.x = player.x-30;
+				//player.x = player.x-30;
+				((FirstCell)player).left();
 			}
 			if(event.getCode() == KeyCode.D){
-				player.x = player.x+30;
+				//player.x = player.x+30;
+				((FirstCell)player).right();
 			}
-			player.update();
+			//player.update();
+			//((FirstCell)player).afterMove();
+			
+			
 			//System.out.println("IMG WHILE MOVING :" + player.img.impl_getUrl());
 			
-			//***     MONITOR MOVEMENT     ***//
-			gc.setFill(Color.YELLOW);
-			gc.fillRect(player.x, player.y, 15, 15);		
-						
+			//*** XXX    MONITOR MOVEMENT     ***//
+//			gc.setFill(Color.YELLOW);
+//			gc.fillRect(((FirstCell)player).getX(), ((FirstCell)player).getY(), 15, 15);							
 			foodCollisionCheck();
 		}		
 	};
-
-	public static void main(String[] args) {
-		launch(args);
-	}
 
 	@Override
 	public void start(Stage stage) throws Exception {
@@ -130,46 +136,6 @@ public class AppClass extends Application{
 
 
 		f = new FoodFactory(gc);		
-	}
-	
-	public void enemyCollisionCheck() {
-		Rectangle p = new Rectangle(player.x, player.y, 30, 30);
-		for (GameObject e: enemies) {
-			Rectangle enemy = new Rectangle(e.x, e.y, e.img.getWidth(), e.img.getHeight());
-			if (p.intersects(enemy.getX(),enemy.getY(), 30, 30)) {					
-				scene.setOnKeyPressed(null);	
-
-				gc.setFill(Color.RED);					
-				gc.fillText("YOU DIED!!", 300, 400);
-				timer.stop();
-			}
-		}
-	}
-	
-	public void foodCollisionCheck() {
-		boolean intersectFlag=false;
-		Rectangle p = new Rectangle(player.x, player.y, 30, 30);
-		Iterator<GameObject> it = food.iterator();
-		while (it.hasNext()){
-			GameObject s = it.next();
-			Rectangle fishrect = new Rectangle(s.x, s.y, s.img.getWidth(), s.img.getHeight());
-			if (p.intersects(fishrect.getX(), fishrect.getY(), 30, 30)){
-				intersectFlag = true;
-				it.remove();
-				((FirstCell)player).eat();
-				if ( ((FirstCell)player).getAge() == 2 ) {
-					createChoice("Become a vertebrate", "Become an invertebrate");	
-				}
-				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Vertebrate)
-					createChoice("Become a Cartilaginous fish", "I want bony skeleton");
-				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Invertebrate)
-					createChoice("Become an Arthropod", "Become a Cnidarian");
-			}
-		}
-		if(intersectFlag){
-			gc.setFill(Color.RED);
-			gc.fillText("MUNCH!", 400, 500);
-		}
 	}
 	
 	public void startGameMenu(){
@@ -196,7 +162,47 @@ public class AppClass extends Application{
 		root.getChildren().add(exit);
 	}
 
+	public void enemyCollisionCheck() {
+		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
+		for (GameObject e: enemies) {
+			Rectangle enemy = new Rectangle(e.x, e.y, e.img.getWidth(), e.img.getHeight());
+			if (p.intersects(enemy.getX(),enemy.getY(), 30, 30)) {					
+				scene.setOnKeyPressed(null);	
 
+				gc.setFill(Color.RED);					
+				gc.fillText("YOU DIED!!", 300, 400);
+				timer.stop();
+				restartGame();
+			}
+		}
+	}
+	
+	public void foodCollisionCheck() {
+		boolean intersectFlag=false;
+		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
+		Iterator<GameObject> it = food.iterator();
+		while (it.hasNext()){
+			GameObject s = it.next();
+			Rectangle fishrect = new Rectangle(s.x, s.y, s.img.getWidth(), s.img.getHeight());
+			if (p.intersects(fishrect.getX(), fishrect.getY(), 30, 30)){
+				intersectFlag = true;
+				it.remove();
+				((FirstCell)player).eat();
+				if ( ((FirstCell)player).getAge() == 2 ) {
+					createChoice("Become a vertebrate", "Become an invertebrate");	
+				}
+				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Vertebrate)
+					createChoice("Become a Cartilaginous fish", "I want bony skeleton");
+				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Invertebrate)
+					createChoice("Become an Arthropod", "Become a Cnidarian");
+			}
+		}
+		if(intersectFlag){
+			gc.setFill(Color.RED);
+			gc.fillText("MUNCH!", 400, 500);
+		}
+	}
+	
 	public void createChoice(String opt1, String opt2){
 		Button choice1 = new Button();
 		Button choice2 = new Button();
@@ -234,6 +240,30 @@ public class AppClass extends Application{
 		root.getChildren().add(choice1);
 		root.getChildren().add(choice2);
 
+	}
+	
+	int restartTimer =0;
+	
+	AnimationTimer restart = new AnimationTimer(){
+		@Override
+		public void handle(long now) {
+			restartTimer++;
+			gc.setFill(Color.BLUE);
+			gc.fillText("RestartTimer: " + restartTimer, 400, 500);	
+			if (restartTimer > 200){
+				timer.start();
+				enemies.clear();
+				food.clear();
+				foodCounter = 0;
+				enemyCounter = 0;
+				restart.stop();
+				scene.setOnKeyPressed(keyhandler);
+				restartTimer=0;
+				player = new FirstCell(gc, 30, 30);
+			}
+		}};
+	public void restartGame(){
+			restart.start();			
 	}
 
 }

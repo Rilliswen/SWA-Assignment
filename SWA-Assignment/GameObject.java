@@ -21,6 +21,29 @@ public class GameObject {
 			gc.drawImage(img, x, y, 30, 30);
 		}
 	}	
+	
+	public double getX() {
+		return x;
+	}
+	public double getY() {
+		return y;
+	}
+	public void up()
+	{
+		y-=30;
+	}
+	public void down()
+	{
+		y+=30;
+	}
+	public void left()
+	{
+		x-=30;
+	}
+	public void right()
+	{
+		x+=30;
+	}
 }
 
 
@@ -63,7 +86,14 @@ class Enemy extends GameObject{
 //*** DELEGATION PATTERN ***//
 
 
-interface Evolution {public void update(); };
+interface Evolution {
+	public void update(); 
+	void up(); 
+	void down(); 
+	void left(); 
+	void right();
+	double getX();
+	double getY();};
 
 class FirstCell extends GameObject implements Evolution{
 
@@ -85,23 +115,19 @@ class FirstCell extends GameObject implements Evolution{
 	public void evolve(String type){
 		switch (type) {
 
-		case "Become a vertebrate" :	delegate = new Vertebrate(gc,x,y);	
-				img = new Image(GameObject.class.getResource("res/Myllokunmingia (first vertebrate).png").toExternalForm());
+		case "Become a vertebrate" :	delegate = new Vertebrate(gc,getX(),getY());	
 				break;
-		case "Become an invertebrate": 	delegate = new Invertebrate(gc,x,y);
-				img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
+		case "Become an invertebrate": 	delegate = new Invertebrate(gc,getX(),getY());
 				break;
 
 
 		case "I want a bony skeleton":	break;
 		case "Become a "
-		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,x,y);
-				img = new Image(GameObject.class.getResource("res/shark.png").toExternalForm());
+		+ "Cartilaginous fish":			delegate = new CartilaginousFish(gc,getX(),getY());
 				break;
 		case "Become an Arthropod" : 	
 				break;
-		case "Become a Cnidarian" : 	delegate = new Cnidarian(gc,x,y);
-				img = new Image(GameObject.class.getResource("res/jellyfish.png").toExternalForm());
+		case "Become a Cnidarian" : 	delegate = new Cnidarian(gc,getX(),getY());
 				break;
 
 
@@ -136,15 +162,62 @@ class FirstCell extends GameObject implements Evolution{
 
 		delegate.update();
 
-		//***    DIAGNOSTICS    ***//
-		System.out.println(delegate.getClass().toGenericString());				
-		System.out.println("Evolve IMG: " + this.img.impl_getUrl()); //img remains the cell image even though constructor is supposed to change it.
+		//*** XXX   DIAGNOSTICS    ***//
+		//System.out.println(delegate.getClass().toGenericString());				
+		//System.out.println("Evolve IMG: " + this.img.impl_getUrl()); //img remains the cell image even though constructor is supposed to change it.
 
 	}
 	public int getAge() {
 		return age;
 	}
 	
+	public void afterMove()
+	{
+		delegate.update();
+	}
+	
+	public void up()
+	{
+		if(delegate instanceof FirstCell)
+			super.up();
+		else
+			delegate.up();
+	}
+	public void down()
+	{
+		if(delegate instanceof FirstCell)
+			super.down();
+		else
+			delegate.down();
+	}
+	public void left()
+	{
+		if(delegate instanceof FirstCell)
+			super.left();
+		else
+			delegate.left();
+	}
+	public void right()
+	{
+			if(delegate instanceof FirstCell)
+				super.right();
+			else
+				delegate.right();
+	}
+	
+	public double getX(){
+		if(delegate instanceof FirstCell)
+			return super.getX();
+		else
+			return delegate.getX();
+	}
+	public double getY(){
+		if(delegate instanceof FirstCell)
+			return super.getY();
+		else
+			return delegate.getY();
+	}
+
 }
 
 class Vertebrate extends GameObject implements Evolution{
@@ -162,14 +235,12 @@ class Invertebrate extends GameObject implements Evolution{
 	public Invertebrate(GraphicsContext gc, double x, double y) {
 		super(gc, x, y);
 		img = new Image(GameObject.class.getResource("res/trilobite (first invertebrate).png").toExternalForm());
-
-		//**    DIAGNOSTICS    **//
-		gc.setFill(Color.RED);
-		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
-		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
-		System.out.println("Constructor exit");		
-
 		update();
+		//**    DIAGNOSTICS    **//
+//		gc.setFill(Color.RED);
+//		gc.fillText("Player class: " +  this.getClass().toGenericString(), 100, 500);
+//		gc.fillText("Player Image: " + this.img.impl_getUrl(), 100, 450);
+//		System.out.println("Constructor exit");				
 	}
 
 }
