@@ -4,6 +4,7 @@ import java.util.Random;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -12,32 +13,40 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class AppClass extends Application{
 
 	Pane root;
 	Scene scene;
 	Canvas canvas;
-	Canvas background;
 	GraphicsContext gc;
 	ArrayList<GameObject> food = new ArrayList<GameObject>();
 	ArrayList<GameObject> enemies = new ArrayList<GameObject>();
-
+	static int TILE_WIDTH = 32;
+	static int TILE_HEIGHT = 32;
+	static int SCREEN_WIDTH = 800;
+	static int SCREEN_HEIGHT = 640;
 
 	GameObject player;
 
-
-	Random rnd = new Random();
+	static Random rnd = new Random();
 	int foodCounter = 0, enemyCounter = 0;
 
-	FoodFactory f;
+	Factory f;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -48,28 +57,15 @@ public class AppClass extends Application{
 
 		@Override
 		public void handle(long now) {
-			gc.setFill(Color.BLACK);
-			gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+			gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight()); // clear the canvas
+			((FirstCell)player).afterMove(); //update the player image
+			enemyCollisionCheck();		// check if any enemies have moved into the player zone
 
-			//player.update();
-			((FirstCell)player).afterMove();
-
-
-			root.getChildren().add(player.hbar());
-
-			enemyCollisionCheck();		
-
+			root.getChildren().add(((FirstCell) player).hbar()); // update the healthbar of the player
 
 			// Factory for food & enemies
-			if (foodCounter++ > 100) {
-				food.add(f.createProduct("food", rnd.nextInt(800), rnd.nextInt(600)));
-				foodCounter =0;				
-			}	
-
-			if (enemyCounter++ > 200 && enemies.size() < 6) {
-				enemies.add(f.createProduct("enemy", rnd.nextInt(800), rnd.nextInt(600)));
-				enemyCounter = 0;
-			}
+			spawnfood();
+			spawnenemy(); 
 
 			// Redraw food & enemies
 			for (GameObject s: food)
@@ -77,44 +73,33 @@ public class AppClass extends Application{
 
 			for (GameObject e: enemies)
 				e.update();
-
-
-			//*** XXX   DIAGNOSTICS    ***//
-						gc.setFill(Color.RED);
-			gc.fillText("Age: " + ((FirstCell) player).getAge(), 100, 550);
-						gc.fillText("Player Health: " + player.curHP(), 400, 20);
+			
+			//if the player has fallen in a trap, stop the game
+			if(((FirstCell) player).isDead()) {
+				soundEffect("death");
+				player = NullObj.getInstance();
+				stopgame();
+			}
 		}
 	};
 
 	EventHandler<KeyEvent> keyhandler = new EventHandler<KeyEvent> () {
 
+		//handles the player movement
 		@Override
 		public void handle(KeyEvent event) {
 			if(event.getCode() == KeyCode.W){
-				//player.y = player.y-30;					
 				((FirstCell)player).up();
 			}
 			if(event.getCode() == KeyCode.S){
-				//player.y = player.y+30;
 				((FirstCell)player).down();
 			}
 			if(event.getCode() == KeyCode.A){
-				//player.x = player.x-30;
 				((FirstCell)player).left();
 			}
 			if(event.getCode() == KeyCode.D){
-				//player.x = player.x+30;
 				((FirstCell)player).right();
-			}
-			//player.update();
-			//((FirstCell)player).afterMove();
-
-
-			//System.out.println("IMG WHILE MOVING :" + player.img.impl_getUrl());
-
-			//*** XXX    MONITOR MOVEMENT     ***//
-			//			gc.setFill(Color.YELLOW);
-			//			gc.fillRect(((FirstCell)player).getX(), ((FirstCell)player).getY(), 15, 15);							
+			}						
 			foodCollisionCheck();
 		}		
 	};
@@ -122,45 +107,60 @@ public class AppClass extends Application{
 	@Override
 	public void start(Stage stage) throws Exception {
 		root = new Pane();
-		scene  = new Scene(root, 800,800);
+		scene  = new Scene(root, 800,864);
 		stage.setScene(scene);
 		stage.show();
+		playMusic();
+		Pane mapdisplay = new Pane();		
+		//draw the map on a separate pane		
+		CustomMap map = new CustomMap(mapdisplay);
+		root.getChildren().add(mapdisplay);
+		root.setStyle("-fx-background-color: #666666");
+		canvas = new Canvas(SCREEN_WIDTH,SCREEN_HEIGHT); //places a canvas on top of the map for the players and enemies to be drawn
+		canvas.setLayoutY(96);
 
-		canvas = new Canvas(800,600);
-		canvas.setLayoutY(100);		
 		gc = canvas.getGraphicsContext2D();
-		background = new Canvas(800, 800);
-		gc.setFill(Color.BLACK);
-		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-		root.getChildren().addAll(canvas, background);
 
+		root.getChildren().addAll(canvas);
 
-
-		startGameMenu();
-
-
-
-
-		f = new FoodFactory(gc);		
+		setInstructions();//sets the instructions for the player
+		startGameMenu(); //initialises the start game menu
+		f = new Factory(gc); //creates a new instance 	
 	}
 
 	public void startGameMenu(){
+		gc.setFill(Color.BLACK);
+		gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 		Button start = new Button();
 		Button exit = new Button();
+		String buttonstyle = 	"-fx-background-color:" + 
+				"	linear-gradient(#ffd65b, #e68400)," + 
+				"	linear-gradient(#ffef84, #f2ba44)," + 
+				"	linear-gradient(#ffea6a, #efaa22)," + 
+				"	linear-gradient(#ffe657 0%, #f8c202 50%, #eea10b 100%)," + 
+				"	linear-gradient(from 0% 0% to 15% 50%, rgba(255,255,255,0.9), rgba(255,255,255,0));" + 
+				"-fx-background-radius: 30;" + 
+				"-fx-background-insets: 0,1,2,3,0;" + 
+				"-fx-text-fill: #654b00;" + 
+				"-fx-font-weight: bold;" + 
+				"-fx-font-size: 14px;" + 
+				"-fx-padding: 10 20 10 20; ";
 		start.setText("Start");
 		exit.setText("Exit");
-		start.setLayoutX(300);
+		start.setLayoutX(288);
 		start.setLayoutY(300);
-		exit.setLayoutX(300);
+		start.setMinWidth(224);
+		exit.setLayoutX(288);
 		exit.setLayoutY(400);
+		exit.setMinWidth(224);
+
 		start.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
 			@Override
 			public void handle(MouseEvent arg0) {
-				player = new FirstCell(gc, 30, 30);
-				root.getChildren().add(player.hbar());
+				player = new FirstCell(gc, 32, 32);
+				root.getChildren().add(((FirstCell) player).hbar());
 
-				//TODO Add stylesheet here!
-				//scene.getStylesheets().add();				
+
 				scene.setOnKeyPressed(keyhandler);
 				timer.start();
 
@@ -168,93 +168,73 @@ public class AppClass extends Application{
 				root.getChildren().remove(exit);
 			}			
 		});
+
+		exit.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+
+			@Override
+			public void handle(MouseEvent arg0) {
+				Platform.exit();
+			}
+
+		});
+		start.setStyle(buttonstyle);
+		exit.setStyle(buttonstyle);
 		root.getChildren().add(start);
 		root.getChildren().add(exit);
 	}
 
 	public void enemyCollisionCheck() {
-		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
+		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), TILE_WIDTH, TILE_HEIGHT);
 		for (GameObject e: enemies) {
 			Rectangle enemy = new Rectangle(e.x, e.y, e.img.getWidth(), e.img.getHeight());
-			if (p.intersects(enemy.getX(),enemy.getY(), 30, 30)) {
-				if(player.curHP() == 0){
-					scene.setOnKeyPressed(null);	
-
-					gc.setFill(Color.RED);					
-					gc.fillText("YOU DIED!!", 300, 400);
-					timer.stop();
-					restartGame();
+			if (p.intersects(enemy.getX(),enemy.getY(), TILE_WIDTH, TILE_HEIGHT)) {
+				soundEffect("damage");
+				if(((FirstCell) player).isDead()){
+					soundEffect("death");
+					stopgame();
 				}
-				//XXX Player loses health too fast
 				else
-					player.decrementHP();
+					((FirstCell) player).decrementHP();
 			}
 		}
+	}
+	public void stopgame() {
+		scene.setOnKeyPressed(null);	
+				
+		Text death = new Text("You Died!");
+		death.setX(336);
+		death.setY(336);
+		death.setFill(Color.RED);
+		death.setFont(Font.font("Verdana", 24));
+		death.setStyle("-fx-font-weight: bold;"
+				+ "-fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );");
+		root.getChildren().add(death);
+		soundEffect("death");
+		timer.stop();
+		restartGame();
 	}
 
 	public void foodCollisionCheck() {
 		boolean intersectFlag=false;
-		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(), 30, 30);
+		Rectangle p = new Rectangle(((FirstCell)player).getX(), ((FirstCell)player).getY(),  TILE_WIDTH, TILE_HEIGHT);
 		Iterator<GameObject> it = food.iterator();
 		while (it.hasNext()){
 			GameObject s = it.next();
-			Rectangle fishrect = new Rectangle(s.x, s.y, s.img.getWidth(), s.img.getHeight());
-			if (p.intersects(fishrect.getX(), fishrect.getY(), 30, 30)){
+			if (p.intersects(s.x+1, s.y+1, TILE_WIDTH-2, TILE_HEIGHT-2)){
 				intersectFlag = true;
 				it.remove();
 				((FirstCell)player).eat();
-				if ( ((FirstCell)player).getAge() == 2 ) {
-					createChoice("Become a vertebrate", "Become an invertebrate");	
+				soundEffect("food");
+
+				if (((FirstCell)player).getOptions()!= null) {
+					root.getChildren().addAll(((FirstCell)player).getOptions());
 				}
-				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Vertebrate)
-					createChoice("Become a Cartilaginous fish", "I want bony skeleton");
-				else if ( ((FirstCell)player).getAge() == 4 && ((FirstCell)player).delegate instanceof Invertebrate)
-					createChoice("Become an Arthropod", "Become a Cnidarian");
 			}
 		}
 		if(intersectFlag){
 			gc.setFill(Color.RED);
 			gc.fillText("MUNCH!", 400, 500);
 		}
-	}
-
-	public void createChoice(String opt1, String opt2){
-		Button choice1 = new Button();
-		Button choice2 = new Button();
-		choice1.setText(opt1);
-		choice2.setText(opt2);
-		choice1.setLayoutX(100);
-		choice2.setLayoutX(200);
-		choice1.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>(){
-			@Override
-			public void handle(MouseEvent event) {
-				((FirstCell)player).evolve(choice1.getText());
-				player.update();
-
-
-				System.out.println("AppClass: " + player.img.impl_getUrl());
-
-
-				root.getChildren().remove(choice1);
-				root.getChildren().remove(choice2);
-			}});
-		choice2.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>(){
-			@Override
-			public void handle(MouseEvent event) {
-				((FirstCell)player).evolve(choice2.getText());
-				player.update();
-
-
-				System.out.println("AppClass: " + player.img.impl_getUrl());
-
-
-				root.getChildren().remove(choice1);
-				root.getChildren().remove(choice2);
-			}});
-
-		root.getChildren().add(choice1);
-		root.getChildren().add(choice2);
-
 	}
 
 	int restartTimer =0;
@@ -266,21 +246,111 @@ public class AppClass extends Application{
 			gc.setFill(Color.BLUE);
 			gc.fillText("RestartTimer: " + restartTimer, 400, 500);	
 			if (restartTimer > 200){
-				timer.start();
+				restart.stop();
 				enemies.clear();
 				food.clear();
 				foodCounter = 0;
 				enemyCounter = 0;
+				startGameMenu();
+
+				enemies.clear();
+				food.clear();
+
 				restart.stop();
-				scene.setOnKeyPressed(keyhandler);
 				restartTimer=0;
-				player = new FirstCell(gc, 30, 30);
+
 			}
 		}};
 		public void restartGame(){
 			restart.start();			
 		}
 
+		public void spawnfood() {
+			int x = rnd.nextInt(24)*32;
+			int y = rnd.nextInt(19)*32;
+			if (foodCounter++ > 50) {
+				if (CustomMap.BOUNDS[(((int)(y/32)*25)+(int)(x/32))]==-1) {
+					food.add(f.createProduct("food", x, y));
+					foodCounter =0;	
+				}
+				else spawnfood();
+			}	
+		}
+		public void spawnenemy() {
+			int x = rnd.nextInt(24)*32;
+			int y = rnd.nextInt(19)*32;
+			if (enemyCounter++ > 50 && enemies.size() < 4) {
+				if (CustomMap.BOUNDS[(((int)(y/32)*25)+(int)(x/32))]==-1) {
+					enemies.add(f.createProduct("enemy", x, y));
+					enemyCounter = 0;
+				}
+				else spawnenemy();
+			}
+		}
+
+		public void setInstructions() {
+			Image keys = new Image(AppClass.class.getResource("res/wasd-qwerty.png").toExternalForm());
+
+
+			ImageView wasd = new ImageView(keys);
+			wasd.setFitHeight(288);
+			wasd.setFitWidth(128);
+			wasd.setPreserveRatio(true);
+			wasd.setX(64);
+			wasd.setY(736);		
+			Text D = new Text("to move around");
+			D.setX(64);
+			D.setY(848);
+			D.setFill(Color.LIMEGREEN);
+			D.setFont(Font.font("Verdana", 18));
+			Text evolve = new Text("Eat seeds to evolve");
+			evolve.setX(384);
+			evolve.setY(760);
+			evolve.setFill(Color.LIMEGREEN);
+			evolve.setFont(Font.font("Verdana", 18));
+			Text death = new Text("Run away from natural disasters");
+			death.setX(384);
+			death.setY(792);
+			death.setFill(Color.LIMEGREEN);
+			death.setFont(Font.font("Verdana", 18));
+			Text traps = new Text("Don't fall into holes or lava");
+			traps.setX(384);
+			traps.setY(824);
+			traps.setFill(Color.LIMEGREEN);
+			traps.setFont(Font.font("Verdana", 18));
+
+			Text health = new Text("Heath: ");
+			health.setX(192);
+			health.setY(48);
+			health.setFill(Color.LIMEGREEN);
+			health.setFont(Font.font("Verdana", 18));
+
+			root.getChildren().addAll(D, evolve, death, traps, health, wasd);
+		}
+
+		public void playMusic() {
+			MediaPlayer a =new MediaPlayer(new Media(AppClass.class.getResource("res/07 Home at Last.mp3").toExternalForm()));
+			a.setVolume(0.2);
+			a.setOnEndOfMedia(new Runnable() {
+				public void run() {
+					a.seek(Duration.ZERO);
+				}
+			});
+			a.play();
+		}
+
+		public void soundEffect(String s) {
+			MediaPlayer p = null;
+			String res = null;
+			switch (s) {
+			case "food" : res = "res/270342__littlerobotsoundfactory__pickup-03.wav"; break;
+			case "damage" : res = "res/270343__littlerobotsoundfactory__shoot-01.wav"; break;
+			case "death": res = "res/270334__littlerobotsoundfactory__jingle-lose-01.wav"; break;	
+			}
+			p = new MediaPlayer(new Media(AppClass.class.getResource(res).toExternalForm()));
+			p.play();
+			p.setVolume(0.6);
+		}
 }
 
 

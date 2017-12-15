@@ -1,11 +1,11 @@
 import javafx.scene.canvas.GraphicsContext;
 
-public class FoodFactory implements FactoryIF {
+public class Factory implements FactoryIF {
 
 	GraphicsContext gc;
 
 
-	public FoodFactory(GraphicsContext gc) {
+	public Factory(GraphicsContext gc) {
 		super();
 		this.gc = gc;
 	}
